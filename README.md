@@ -15,7 +15,7 @@ To view only a subset of graphs at any one time simply click on the correspondin
 
 ## Solution Overview
 
-The solution is a relatively straightforward moving window graphing function. There is a set window value determined in the app.component.ts file which is measured in seconds. The window function determines the minimum date value that can be shown by the graph. When any item is added a series of checks is initiated which iterate through the pertinent data arrays and deletes items which fall outside this window. The smaller the window, the lower the memory cost, and the better the performance of the app overall.
+The solution is a relatively straight forward moving window graphing function. There is a set window value determined in the app.component.ts file which is measured in seconds. The window value determines the minimum date, relative to the newest entry that can be shown by the graph. When an item is added a series of checks is initiated which iterate through the pertinent data arrays and deletes items which fall outside this window. The smaller the window, the lower the memory cost, and the better the performance of the app overall.
 
 
 ## Bugs and Issues
