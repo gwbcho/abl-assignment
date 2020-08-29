@@ -17,10 +17,9 @@ export class AppComponent implements OnInit {
     title = 'abl-data-app';
     chart: Chart;
     dataSetIndexes: object;
-    arrayCap: number;
+    window: number;
     config: object;
     socket: WebSocket;
-    totalFirstDate: Date;
 
     ngOnInit() {
         const constructorScope = this;  // necessary for nested functions referencing class vars
@@ -31,7 +30,6 @@ export class AppComponent implements OnInit {
             return;  // no chart/graph canvas provided
         }
         this.socket = new WebSocket('ws://localhost:8080');
-        this.totalFirstDate = now;
         // configuration object for graph animation
         this.config = {
             duration: 800,
@@ -39,12 +37,10 @@ export class AppComponent implements OnInit {
             easing: 'easeOutBounce'
         };
         /*
-        Array length cap (multiply by 3 for the total dataset array cap count). This is necessary
-        if you intend to run the app indefinitely as otherwise the data arrays would grow without
-        bound, consuming substantial amounts of memory and affecting the performance of the
-        computer.
+        Window size for the moving graph. This is to prevent the chart data arrays from growing
+        without bound and causing memory issues. Adjust this as you see fit.
         */
-        this.arrayCap = 100;
+        this.window = 1000;
         // instantiate Chart object
         this.chart = new Chart(ctx, {
             type: 'line',
@@ -129,7 +125,7 @@ export class AppComponent implements OnInit {
                 constructorScope.chart,
                 dataObj,
                 translatedIndex,
-                constructorScope.arrayCap
+                constructorScope.window
             );
         });
     }
@@ -167,23 +163,26 @@ export class AppComponent implements OnInit {
     @param {integer} dataSetIntex: index of the data set for replacement
     @param {number} arrayCap: array population cap
     */
-    pushChartData(chart: Chart, dataItem: object, dataSetIndex: number, arrayCap: number = null) {
+    pushChartData(chart: Chart, dataItem: object, dataSetIndex: number, window: number = null) {
+        let windowCutoff;
+        if (window) {
+            windowCutoff = new Date(dataItem['x'] - window);
+            chart.options.scales.xAxes[0].ticks.min = windowCutoff;
+        }
         chart.data.datasets[dataSetIndex].data.push(dataItem);
         if (dataSetIndex) {
             chart.data.datasets[0].data.push(dataItem);
         }
-        if (dataSetIndex && arrayCap && chart.data.datasets[dataSetIndex].data.length > arrayCap) {
-            chart.data.datasets[dataSetIndex].data.shift();
+        if (window && chart.data.datasets[this.dataSetIndexes['All']].data[0].x > windowCutoff) {
+            while (chart.data.datasets[this.dataSetIndexes['All']].data[1] &&
+                   chart.data.datasets[this.dataSetIndexes['All']].data[1].x < windowCutoff) {
+                chart.data.datasets[this.dataSetIndexes['All']].data.shift();
+            }
         }
-        if (arrayCap && chart.data.datasets[0].data.length >
-            arrayCap * (chart.data.datasets.length - 1)) {
-            chart.data.datasets[0].data.shift();
-            this.totalFirstDate = chart.data.datasets[0].data[0].x;
-            chart.options.scales.xAxes[0].ticks.min = this.totalFirstDate;
-        }
-        if (dataSetIndex && chart.data.datasets[dataSetIndex].data[0].x < this.totalFirstDate) {
+        if (window && dataSetIndex && chart.data.datasets[dataSetIndex].data.length &&
+            chart.data.datasets[dataSetIndex].data[0].x < windowCutoff) {
             while (chart.data.datasets[dataSetIndex].data[1] &&
-                   chart.data.datasets[dataSetIndex].data[1].x < this.totalFirstDate) {
+                   chart.data.datasets[dataSetIndex].data[1].x < windowCutoff) {
                 chart.data.datasets[dataSetIndex].data.shift();
             }
         }
