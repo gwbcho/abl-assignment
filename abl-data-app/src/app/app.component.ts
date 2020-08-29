@@ -149,10 +149,11 @@ export class AppComponent implements OnInit {
     }
 
     /*
-    Function to push a new data item into the data set data array. If an array cap value is
-    specified then the array will only grow up to a certain limit after which the first item in the
-    list is removed to make room for the new data item. This function is assuming that data points
-    are provided in order (in terms of the independent variable).
+    Function to push a new data item into the data set data array. If a window value is
+    specified then the array will only grow up to a certain limit to remain in the confides of the
+    graph window after which any items of outside of said window is removed to make room for new
+    data items. This function is assuming that data points are provided in
+    order (in terms of the independent variable).
 
     @param {Chart} chart: chart object
     @param {any} dataItem: data item which must be acceptable to the Chart object:
@@ -161,7 +162,8 @@ export class AppComponent implements OnInit {
             y: float
         }
     @param {integer} dataSetIntex: index of the data set for replacement
-    @param {number} arrayCap: array population cap
+    @param {number} window (optional): graph window size in seconds. If no window size is provided
+        the graph data sets will graph without bound.
     */
     pushChartData(chart: Chart, dataItem: object, dataSetIndex: number, window: number = null) {
         let windowCutoff;
