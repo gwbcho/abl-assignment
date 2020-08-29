@@ -20,15 +20,18 @@ export class AppComponent implements OnInit {
     arrayCap: number;
     config: object;
     socket: WebSocket;
+    totalFirstDate: Date;
 
     ngOnInit() {
         const constructorScope = this;  // necessary for nested functions referencing class vars
         // retrieve chart canvas ID
         const ctx = document.getElementById('graphCanvas') || null;
+        const now = new Date();
         if (!ctx) {
             return;  // no chart/graph canvas provided
         }
-        this.socket = new WebSocket('http://localhost:8080');
+        this.socket = new WebSocket('ws://localhost:8080');
+        this.totalFirstDate = now;
         // configuration object for graph animation
         this.config = {
             duration: 800,
@@ -49,7 +52,9 @@ export class AppComponent implements OnInit {
                 datasets: [
                     {
                         label: 'Data From All (A, B, C) Sources',
-                        data: [],
+                        data: [
+                            {x: now, y: 0}
+                        ],
                         backgroundColor: 'black',
                         borderColor: 'black',
                         fill: false
@@ -76,6 +81,35 @@ export class AppComponent implements OnInit {
                         fill: false
                     }
                 ]
+            },
+            options: {
+                animation: false,
+                responsive: true,
+                scales: {
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Time ( UTC )'
+                        },
+                        type: 'time',
+                        time: {
+                            tooltipFormat: "hh:mm:ss",
+                            displayFormats: {
+                                hour: 'MMM D, hh:mm:ss'
+                            }
+                        },
+                        ticks: {
+                            maxRotation: 90,
+                            minRotation: 90
+                        }
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            suggestedMin: -10,
+                            suggestedMax: 10
+                        }
+                    }]
+                }
             }
         });
         // dataset correspondences
@@ -87,7 +121,7 @@ export class AppComponent implements OnInit {
                 return;
             }
             let dataObj = {
-                x: eventDataObj.ts,  // timestamp
+                x: new Date(eventDataObj.ts),  // timestamp
                 y: eventDataObj.val  // value
             }
             let translatedIndex = constructorScope.dataSetIndexes[eventDataObj.sourceName];
@@ -138,11 +172,20 @@ export class AppComponent implements OnInit {
         if (dataSetIndex) {
             chart.data.datasets[0].data.push(dataItem);
         }
-        if (arrayCap && chart.data.datasets[dataSetIndex].data.length > arrayCap) {
+        if (dataSetIndex && arrayCap && chart.data.datasets[dataSetIndex].data.length > arrayCap) {
             chart.data.datasets[dataSetIndex].data.shift();
         }
-        if (arrayCap && chart.data.datasets[0].data.length > 3 * (chart.data.datasets.length - 1)) {
+        if (arrayCap && chart.data.datasets[0].data.length >
+            arrayCap * (chart.data.datasets.length - 1)) {
             chart.data.datasets[0].data.shift();
+            this.totalFirstDate = chart.data.datasets[0].data[0].x;
+            chart.options.scales.xAxes[0].ticks.min = this.totalFirstDate;
+        }
+        if (dataSetIndex && chart.data.datasets[dataSetIndex].data[0].x < this.totalFirstDate) {
+            while (chart.data.datasets[dataSetIndex].data[1] &&
+                   chart.data.datasets[dataSetIndex].data[1].x < this.totalFirstDate) {
+                chart.data.datasets[dataSetIndex].data.shift();
+            }
         }
         chart.update();
     }
