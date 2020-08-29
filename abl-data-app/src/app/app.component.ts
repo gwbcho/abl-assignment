@@ -173,16 +173,20 @@ export class AppComponent implements OnInit {
         if (dataSetIndex) {
             chart.data.datasets[0].data.push(dataItem);
         }
+        // remove data elements from the total data array that are not within the window
         if (window && chart.data.datasets[this.dataSetIndexes['All']].data[0].x > windowCutoff) {
             while (chart.data.datasets[this.dataSetIndexes['All']].data[1] &&
                    chart.data.datasets[this.dataSetIndexes['All']].data[1].x < windowCutoff) {
+                // remove the first element of the array
                 chart.data.datasets[this.dataSetIndexes['All']].data.shift();
             }
         }
+        // remove data elements from the pertinent dataset that do not fall within the window
         if (window && dataSetIndex && chart.data.datasets[dataSetIndex].data.length &&
             chart.data.datasets[dataSetIndex].data[0].x < windowCutoff) {
             while (chart.data.datasets[dataSetIndex].data[1] &&
                    chart.data.datasets[dataSetIndex].data[1].x < windowCutoff) {
+                // remove the first element of the array
                 chart.data.datasets[dataSetIndex].data.shift();
             }
         }
